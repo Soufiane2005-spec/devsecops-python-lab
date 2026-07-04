@@ -1,0 +1,49 @@
+name: Python CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  quality-and-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Lint with Ruff
+        run: ruff check .
+
+      - name: Run tests
+        run: pytest -q
+
+      - name: Bandit security report
+        run: |
+          mkdir -p security/reports
+          bandit -r app -f json -o security/reports/bandit.json || true
+
+      - name: Dependency audit report
+        run: |
+          pip-audit -r requirements.txt \
+            --format=json \
+            --output=security/reports/pip-audit.json || true
+
+      - name: Upload security reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-reports
+          path: security/reports/

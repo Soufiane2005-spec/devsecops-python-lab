@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ title or "DevSecOps Lab" }}</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 900px; margin: 40px auto; padding: 0 20px; }
+    nav { display: flex; gap: 16px; margin-bottom: 24px; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    form { display: grid; gap: 12px; max-width: 420px; }
+    input, textarea, button { padding: 10px; }
+    .error { color: #a00; }
+    .success { color: #087a2f; }
+    .warning { padding: 12px; background: #fff3cd; border: 1px solid #ffe69c; }
+  </style>
+</head>
+<body>
+  {% if session.get('user_id') %}
+  <nav>
+    <a href="{{ url_for('products') }}">Produits</a>
+    <a href="{{ url_for('add_product') }}">Ajouter</a>
+    {% if session.get('role') == 'ADMIN' %}<a href="{{ url_for('admin') }}">Administration</a>{% endif %}
+    <a href="{{ url_for('logout') }}">Déconnexion</a>
+  </nav>
+  {% endif %}
+  {% for category, message in get_flashed_messages(with_categories=true) %}
+    <p class="{{ category }}">{{ message }}</p>
+  {% endfor %}
+  {% block content %}{% endblock %}
+</body>
+</html>

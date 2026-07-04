@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Connexion</h1>
+<p class="warning">Laboratoire local : le mode vulnérable est volontaire. Ne pas exposer sur Internet.</p>
+<form method="post">
+  <label>Nom d’utilisateur <input name="username" required></label>
+  <label>Mot de passe <input name="password" type="password" required></label>
+  <button type="submit">Se connecter</button>
+</form>
+<p>Comptes : admin/Admin123! et user/User123!</p>
+{% endblock %}

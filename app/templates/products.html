@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Produits</h1>
+<table>
+  <thead><tr><th>ID</th><th>Nom</th><th>Description</th><th>Prix</th><th>Quantité</th></tr></thead>
+  <tbody>
+    {% for product in products %}
+    <tr>
+      <td>{{ product['id'] }}</td>
+      <td>{{ product['name'] }}</td>
+      <td>{{ product['description'] }}</td>
+      <td>{{ '%.2f'|format(product['price']) }}</td>
+      <td>{{ product['quantity'] }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

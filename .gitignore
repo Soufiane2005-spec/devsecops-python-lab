@@ -1,0 +1,53 @@
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment variables and secrets
+.env
+.env.local
+.env.development
+.env.production
+!.env.example
+
+# Flask local runtime data
+instance/
+
+# Local databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Test coverage
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+# Python packaging
+build/
+dist/
+*.egg-info/
+
+# Generated security reports
+security/reports/*
+!security/reports/.gitkeep
+
+# IDE files
+.vscode/
+.idea/
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

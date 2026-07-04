@@ -1,0 +1,14 @@
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      SECRET_KEY: local-docker-secret
+      VULNERABLE_MODE: "true"
+      DATABASE_PATH: /app/instance/devsecops.sqlite
+    volumes:
+      - app_data:/app/instance
+
+volumes:
+  app_data:
