@@ -1,19 +1,19 @@
 import sqlite3
-from pathlib import Path
 
 from flask import (
     Flask,
     flash,
-    g,
     redirect,
     render_template,
     request,
     session,
     url_for,
 )
-from werkzeug.security import check_password_hash, generate_password_hash
+from werkzeug.security import check_password_hash
 
 from .config import Config
+from .database import get_db
+from .database import init_app as init_database
 
 
 def create_app(test_config: dict | None = None) -> Flask:
@@ -30,122 +30,8 @@ def create_app(test_config: dict | None = None) -> Flask:
             "SECRET_KEY is required. Create a .env file based on .env.example."
         )
 
-    # Create the Flask instance directory.
-    Path(app.instance_path).mkdir(parents=True, exist_ok=True)
-
-    # Create the database parent directory when necessary.
-    database_path = Path(app.config["DATABASE"])
-    database_path.parent.mkdir(parents=True, exist_ok=True)
-
-    def get_db() -> sqlite3.Connection:
-        """Return one database connection for the current request."""
-
-        if "db" not in g:
-            g.db = sqlite3.connect(app.config["DATABASE"])
-            g.db.row_factory = sqlite3.Row
-
-        return g.db
-
-    @app.teardown_appcontext
-    def close_db(_error: Exception | None = None) -> None:
-        """Close the database connection after each request."""
-
-        database = g.pop("db", None)
-
-        if database is not None:
-            database.close()
-
-    def init_db() -> None:
-        """Create the local training database and seed test data."""
-
-        database = sqlite3.connect(app.config["DATABASE"])
-
-        try:
-            database.executescript(
-                """
-                DROP TABLE IF EXISTS users;
-                DROP TABLE IF EXISTS products;
-
-                CREATE TABLE users (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    username TEXT UNIQUE NOT NULL,
-                    password_plain TEXT NOT NULL,
-                    password_hash TEXT NOT NULL,
-                    role TEXT NOT NULL
-                        CHECK(role IN ('USER', 'ADMIN'))
-                );
-
-                CREATE TABLE products (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    name TEXT NOT NULL,
-                    description TEXT NOT NULL,
-                    price REAL NOT NULL CHECK(price >= 0),
-                    quantity INTEGER NOT NULL CHECK(quantity >= 0)
-                );
-                """
-            )
-
-            database.executemany(
-                """
-                INSERT INTO users (
-                    username,
-                    password_plain,
-                    password_hash,
-                    role
-                )
-                VALUES (?, ?, ?, ?)
-                """,
-                [
-                    (
-                        "admin",
-                        "Admin123!",
-                        generate_password_hash("Admin123!"),
-                        "ADMIN",
-                    ),
-                    (
-                        "user",
-                        "User123!",
-                        generate_password_hash("User123!"),
-                        "USER",
-                    ),
-                ],
-            )
-
-            database.executemany(
-                """
-                INSERT INTO products (
-                    name,
-                    description,
-                    price,
-                    quantity
-                )
-                VALUES (?, ?, ?, ?)
-                """,
-                [
-                    (
-                        "Laptop",
-                        "Ordinateur de démonstration",
-                        8500.0,
-                        4,
-                    ),
-                    (
-                        "Clavier",
-                        "Clavier USB",
-                        250.0,
-                        15,
-                    ),
-                ],
-            )
-
-            database.commit()
-        except sqlite3.Error:
-            database.rollback()
-            raise
-        finally:
-            database.close()
-
-    # Temporary helper used by init_db.py and the tests.
-    app.init_db = init_db  # type: ignore[attr-defined]
+    # Register database lifecycle functions with Flask.
+    init_database(app)
 
     def require_login():
         """Redirect anonymous visitors to the login page."""
@@ -157,7 +43,7 @@ def create_app(test_config: dict | None = None) -> Flask:
 
     @app.route("/")
     def index():
-        """Redirect users to the correct starting page."""
+        """Redirect users to the appropriate starting page."""
 
         if "user_id" in session:
             return redirect(url_for("products"))
@@ -173,7 +59,10 @@ def create_app(test_config: dict | None = None) -> Flask:
             password = request.form.get("password", "")
 
             if not username or not password:
-                flash("Le nom d'utilisateur et le mot de passe sont obligatoires.", "error")
+                flash(
+                    "Le nom d'utilisateur et le mot de passe sont obligatoires.",
+                    "error",
+                )
                 return render_template("login.html"), 400
 
             database = get_db()
@@ -225,7 +114,7 @@ def create_app(test_config: dict | None = None) -> Flask:
 
     @app.route("/products")
     def products():
-        """Display the product list."""
+        """Display the list of products."""
 
         guard_response = require_login()
 
